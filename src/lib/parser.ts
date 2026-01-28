@@ -140,14 +140,17 @@ function truncate(text: string, maxLength: number): string {
 
 // Build a display label that includes technology and truncated description
 function buildDisplayLabel(node: CNNode): string {
-	let label = node.label;
+	const lines: string[] = [node.label];
+
 	if (node.technology) {
-		label += `\n[${node.technology}]`;
+		lines.push(`[${node.technology}]`);
 	}
+
 	if (node.description) {
-		label += `\n${truncate(node.description, 30)}`;
+		lines.push(truncate(node.description, 40));
 	}
-	return label;
+
+	return lines.join('\n');
 }
 
 // Convert CN diagram to Cytoscape elements
