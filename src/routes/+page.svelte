@@ -28,6 +28,7 @@
 	let edgeDrawingMode = $state(false);
 	let edgeSourceNode = $state<string | null>(null);
 	let statusMessage = $state<string>('');
+	let showHelp = $state(false);
 
 	// Track if update came from code or diagram
 	let updateSource: 'code' | 'diagram' = 'code';
@@ -603,9 +604,45 @@ edges:
 				>
 					{edgeDrawingMode ? 'Cancel' : 'Add Edge'}
 				</button>
+				<button
+					class="toolbar-btn"
+					class:active={showHelp}
+					onclick={() => showHelp = !showHelp}
+					title="Show keyboard shortcuts and tips"
+				>
+					?
+				</button>
 			</div>
 		</div>
 		<div class="cytoscape-container" bind:this={containerEl}></div>
+		{#if showHelp}
+			<div class="help-panel">
+				<div class="help-header">
+					<span>Editing Guide</span>
+					<button class="help-close" onclick={() => showHelp = false}>×</button>
+				</div>
+				<div class="help-content">
+					<div class="help-section">
+						<div class="help-title">Mouse Actions</div>
+						<div class="help-item"><kbd>Double-click</kbd> Edit label</div>
+						<div class="help-item"><kbd>Right-click</kbd> Context menu</div>
+						<div class="help-item"><kbd>Drag node</kbd> Reparent to container</div>
+						<div class="help-item"><kbd>Hover</kbd> View full description</div>
+					</div>
+					<div class="help-section">
+						<div class="help-title">Keyboard</div>
+						<div class="help-item"><kbd>Delete</kbd> Remove selected</div>
+						<div class="help-item"><kbd>Esc</kbd> Cancel action</div>
+					</div>
+					<div class="help-section">
+						<div class="help-title">Context Menu</div>
+						<div class="help-item">Canvas: Add node/edge</div>
+						<div class="help-item">Node: Add child, edit, move, delete</div>
+						<div class="help-item">Edge: Edit label, delete</div>
+					</div>
+				</div>
+			</div>
+		{/if}
 		{#if statusMessage}
 			<div class="status-bar">{statusMessage}</div>
 		{/if}
@@ -768,6 +805,85 @@ edges:
 		background: rgba(0, 0, 0, 0.8);
 		color: white;
 		font-size: 12px;
+	}
+
+	/* Help Panel */
+	.help-panel {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		width: 240px;
+		background: white;
+		border-radius: 8px;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+		z-index: 100;
+		overflow: hidden;
+	}
+
+	.help-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 10px 14px;
+		background: #2c5282;
+		color: white;
+		font-weight: 600;
+		font-size: 13px;
+	}
+
+	.help-close {
+		background: none;
+		border: none;
+		color: white;
+		font-size: 18px;
+		cursor: pointer;
+		padding: 0;
+		line-height: 1;
+		opacity: 0.8;
+	}
+
+	.help-close:hover {
+		opacity: 1;
+	}
+
+	.help-content {
+		padding: 12px 14px;
+	}
+
+	.help-section {
+		margin-bottom: 12px;
+	}
+
+	.help-section:last-child {
+		margin-bottom: 0;
+	}
+
+	.help-title {
+		font-size: 11px;
+		font-weight: 600;
+		color: #718096;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin-bottom: 6px;
+	}
+
+	.help-item {
+		font-size: 12px;
+		color: #4a5568;
+		margin-bottom: 4px;
+		display: flex;
+		gap: 8px;
+	}
+
+	.help-item kbd {
+		background: #edf2f7;
+		padding: 2px 6px;
+		border-radius: 4px;
+		font-family: inherit;
+		font-size: 11px;
+		color: #2d3748;
+		min-width: 70px;
+		text-align: center;
 	}
 
 	/* Context Menu */
