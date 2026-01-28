@@ -138,16 +138,12 @@ function truncate(text: string, maxLength: number): string {
 	return text.slice(0, maxLength - 1).trim() + '…';
 }
 
-// Build a display label that includes technology and truncated description
+// Build a display label that includes label and technology (description shown on hover)
 function buildDisplayLabel(node: CNNode): string {
 	const lines: string[] = [node.label];
 
 	if (node.technology) {
 		lines.push(`[${node.technology}]`);
-	}
-
-	if (node.description) {
-		lines.push(truncate(node.description, 40));
 	}
 
 	return lines.join('\n');

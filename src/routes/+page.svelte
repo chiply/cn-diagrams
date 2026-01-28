@@ -256,14 +256,14 @@ edges:
 				'color': '#fff',
 				'text-outline-color': '#4a90d9',
 				'text-outline-width': 1,
-				'font-size': '11px',
-				'min-width': '180px',
-				'min-height': '80px',
-				'padding': '15px',
+				'font-size': '8px',
+				'width': '110px',
+				'height': '65px',
+				'padding': '8px',
 				'shape': 'roundrectangle',
 				'text-wrap': 'wrap',
-				'text-max-width': '160px',
-				'line-height': 1.4
+				'text-max-width': '90px',
+				'line-height': 1.2
 			}
 		},
 		{
@@ -273,14 +273,17 @@ edges:
 				'background-opacity': 0.8,
 				'border-color': '#2c5282',
 				'border-width': 2,
+				'label': 'data(label)',
 				'text-valign': 'top',
 				'text-halign': 'center',
 				'color': '#2c5282',
 				'text-outline-width': 0,
 				'font-weight': 'bold',
-				'font-size': '13px',
+				'font-size': '12px',
 				'padding': '35px',
-				'text-margin-y': 8
+				'text-margin-y': 5,
+				'text-wrap': 'ellipsis',
+				'text-max-width': '200px'
 			}
 		},
 		{
@@ -329,17 +332,19 @@ edges:
 				'border-color': '#5a67d8',
 				'border-width': 3,
 				'border-style': 'dashed',
+				'label': 'data(label)',
 				'text-valign': 'center',
 				'text-halign': 'center',
 				'color': '#fff',
 				'text-outline-color': '#667eea',
 				'text-outline-width': 1,
 				'font-weight': 'bold',
-				'font-size': '12px',
-				'min-width': '160px',
-				'min-height': '60px',
-				'padding': '20px',
-				'text-max-width': '180px'
+				'font-size': '10px',
+				'min-width': '100px',
+				'min-height': '40px',
+				'padding': '12px',
+				'text-max-width': '80px',
+				'text-wrap': 'ellipsis'
 			}
 		}
 	];
