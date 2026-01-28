@@ -347,3 +347,19 @@ function collectIds(seq: YAMLSeq, ids: Set<string>): void {
 		}
 	}
 }
+
+/**
+ * Get the parent ID of a node (returns undefined if node is at root level)
+ */
+export function getNodeParentId(yamlText: string, nodeId: string): string | undefined {
+	try {
+		const doc = parseDocument(yamlText);
+		const nodes = doc.get('nodes');
+
+		if (!isSeq(nodes)) return undefined;
+
+		return findNodeParent(nodes, nodeId);
+	} catch {
+		return undefined;
+	}
+}

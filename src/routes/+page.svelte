@@ -10,7 +10,8 @@
 		addEdge,
 		reparentNode,
 		generateNodeId,
-		getAllNodeIds
+		getAllNodeIds,
+		getNodeParentId
 	} from '$lib/yaml-editor';
 	import cytoscape from 'cytoscape';
 	import fcose from 'cytoscape-fcose';
@@ -32,41 +33,51 @@
 	let updateSource: 'code' | 'diagram' = 'code';
 
 	// Sample DSL to get started (YAML format)
-	let code = $state(`# CN Diagram Example
-name: Sample Architecture
-description: A simple backend system with clients
+	let code = $state(`# CN Diagram Example - Multi-level Nesting
+name: Cloud Platform Architecture
+description: A cloud platform with multiple levels of encapsulation
 
 nodes:
-  - id: backend
-    label: Backend System
-    description: Core backend services
-    type: system
+  - id: cloud
+    label: Cloud Platform
+    type: environment
     children:
-      - id: api
-        label: API Gateway
-        description: REST API endpoint
-        type: service
-        technology: Node.js
-      - id: auth
-        label: Auth Service
-        description: Authentication and authorization
-        type: service
-        technology: Node.js
-      - id: db
-        label: Database
-        description: Primary data store
-        type: database
-        technology: PostgreSQL
+      - id: k8s
+        label: Kubernetes Cluster
+        type: cluster
+        children:
+          - id: backend
+            label: Backend System
+            type: system
+            children:
+              - id: api
+                label: API Gateway
+                type: service
+                technology: Node.js
+              - id: auth
+                label: Auth Service
+                type: service
+                technology: Node.js
+          - id: data
+            label: Data Layer
+            type: system
+            children:
+              - id: db
+                label: Database
+                type: database
+                technology: PostgreSQL
+              - id: cache
+                label: Redis Cache
+                type: cache
+                technology: Redis
 
   - id: frontend
     label: Frontend App
-    description: Web application
     type: application
     technology: React
 
   - id: mobile
     label: Mobile App
-    description: iOS and Android apps
     type: application
     technology: React Native
 
@@ -74,18 +85,18 @@ edges:
   - source: frontend
     target: api
     label: REST API
-    technology: HTTPS
   - source: mobile
     target: api
     label: REST API
-    technology: HTTPS
   - source: api
     target: auth
     label: validates
   - source: api
     target: db
     label: queries
-    technology: SQL
+  - source: api
+    target: cache
+    label: caches
 `);
 
 	// Simple hash function for deterministic positioning
@@ -371,6 +382,19 @@ edges:
 		showStatus('Moved to root');
 	}
 
+	function handleMoveToParent(nodeId: string) {
+		const currentParentId = getNodeParentId(code, nodeId);
+		if (!currentParentId) return;
+
+		// Get the grandparent (parent's parent)
+		const grandparentId = getNodeParentId(code, currentParentId);
+
+		const newCode = reparentNode(code, nodeId, grandparentId || null);
+		updateCodeFromDiagram(newCode);
+		closeContextMenu();
+		showStatus(grandparentId ? `Moved to ${grandparentId}` : 'Moved to root');
+	}
+
 	function startEdgeDrawing() {
 		edgeDrawingMode = true;
 		edgeSourceNode = null;
@@ -567,7 +591,10 @@ edges:
 			<button onclick={() => handleAddNode(contextMenu?.targetId)}>Add Child Node</button>
 			<button onclick={() => { editingLabel = { id: contextMenu!.targetId!, type: 'node', value: cy?.getElementById(contextMenu!.targetId!).data('label') || '' }; closeContextMenu(); }}>Edit Label</button>
 			{#if cy?.getElementById(contextMenu?.targetId || '').data('parent')}
-				<button onclick={() => handleMoveToRoot(contextMenu!.targetId!)}>Move to Root</button>
+				<button onclick={() => handleMoveToParent(contextMenu!.targetId!)}>Move to Parent</button>
+				{#if getNodeParentId(code, cy?.getElementById(contextMenu?.targetId || '').data('parent'))}
+					<button onclick={() => handleMoveToRoot(contextMenu!.targetId!)}>Move to Root</button>
+				{/if}
 			{/if}
 			<button class="danger" onclick={() => handleDeleteNode(contextMenu!.targetId!)}>Delete Node</button>
 		{:else if contextMenu.type === 'edge'}
