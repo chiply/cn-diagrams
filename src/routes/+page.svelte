@@ -257,12 +257,12 @@ edges:
 				'text-outline-color': '#4a90d9',
 				'text-outline-width': 1,
 				'font-size': '8px',
-				'width': '110px',
-				'height': '65px',
+				'width': '130px',
+				'height': '75px',
 				'padding': '8px',
 				'shape': 'roundrectangle',
 				'text-wrap': 'wrap',
-				'text-max-width': '90px',
+				'text-max-width': '110px',
 				'line-height': 1.2
 			}
 		},
