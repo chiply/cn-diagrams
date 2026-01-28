@@ -195,10 +195,10 @@
 				'color': '#fff',
 				'text-outline-color': '#4a90d9',
 				'text-outline-width': 1,
-				'font-size': '8px',
-				'width': '130px',
-				'height': '75px',
-				'padding': '8px',
+				'font-size': '9px',
+				'width': '120px',
+				'height': '65px',
+				'padding': '4px',
 				'shape': 'roundrectangle',
 				'text-wrap': 'wrap',
 				'text-max-width': '110px',
@@ -218,11 +218,15 @@
 				'color': '#2c5282',
 				'text-outline-width': 0,
 				'font-weight': 'bold',
-				'font-size': '12px',
-				'padding': '35px',
-				'text-margin-y': 5,
-				'text-wrap': 'ellipsis',
-				'text-max-width': '200px'
+				'font-size': '11px',
+				'padding': '25px',
+				'text-margin-y': -10,
+				'text-wrap': 'wrap',
+				'text-max-width': '300px',
+				'text-background-color': '#e8f4f8',
+				'text-background-opacity': 1,
+				'text-background-padding': '4px',
+				'text-background-shape': 'roundrectangle'
 			}
 		},
 		{
@@ -281,9 +285,9 @@
 				'font-size': '10px',
 				'min-width': '100px',
 				'min-height': '40px',
-				'padding': '12px',
-				'text-max-width': '80px',
-				'text-wrap': 'ellipsis'
+				'padding': '8px',
+				'text-max-width': '120px',
+				'text-wrap': 'wrap'
 			}
 		}
 	];
@@ -322,6 +326,9 @@
 		cy.elements().remove();
 		cy.add(elements);
 
+		// Reset viewport before layout
+		cy.reset();
+
 		// Set deterministic initial positions based on node ID hashes
 		cy.nodes().forEach((node, index) => {
 			const pos = getInitialPosition(node.id(), index);
@@ -353,8 +360,6 @@
 			tilingPaddingVertical: 10,
 			tilingPaddingHorizontal: 10,
 			stop: () => {
-				cy?.fit(undefined, 50);
-
 				// Restore collapsed state after layout completes
 				if (expandCollapseApi && collapsedNodes.size > 0) {
 					// Collapse nodes that should remain collapsed (in reverse order for nested containers)
@@ -373,6 +378,11 @@
 						});
 					}
 				}
+
+				// Fit viewport after layout and collapse operations complete
+				setTimeout(() => {
+					cy?.fit(undefined, 50);
+				}, 50);
 			}
 		} as fcose.FcoseLayoutOptions);
 		layout.run();
@@ -953,6 +963,8 @@
 		display: flex;
 		flex-direction: column;
 		position: relative;
+		overflow: hidden;
+		min-height: 0;
 	}
 
 	.header {
@@ -1038,6 +1050,7 @@
 	.cytoscape-container {
 		flex: 1;
 		background: #f7fafc;
+		min-height: 0;
 	}
 
 	.status-bar {
