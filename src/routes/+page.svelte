@@ -364,6 +364,13 @@ edges:
 		showStatus('Edge deleted');
 	}
 
+	function handleMoveToRoot(nodeId: string) {
+		const newCode = reparentNode(code, nodeId, null);
+		updateCodeFromDiagram(newCode);
+		closeContextMenu();
+		showStatus('Moved to root');
+	}
+
 	function startEdgeDrawing() {
 		edgeDrawingMode = true;
 		edgeSourceNode = null;
@@ -559,6 +566,9 @@ edges:
 		{:else if contextMenu.type === 'node'}
 			<button onclick={() => handleAddNode(contextMenu?.targetId)}>Add Child Node</button>
 			<button onclick={() => { editingLabel = { id: contextMenu!.targetId!, type: 'node', value: cy?.getElementById(contextMenu!.targetId!).data('label') || '' }; closeContextMenu(); }}>Edit Label</button>
+			{#if cy?.getElementById(contextMenu?.targetId || '').data('parent')}
+				<button onclick={() => handleMoveToRoot(contextMenu!.targetId!)}>Move to Root</button>
+			{/if}
 			<button class="danger" onclick={() => handleDeleteNode(contextMenu!.targetId!)}>Delete Node</button>
 		{:else if contextMenu.type === 'edge'}
 			<button onclick={() => { editingLabel = { id: contextMenu!.targetId!, type: 'edge', value: cy?.getElementById(contextMenu!.targetId!).data('label') || '' }; closeContextMenu(); }}>Edit Label</button>
