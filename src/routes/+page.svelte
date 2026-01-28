@@ -746,16 +746,14 @@ edges:
 			<button onclick={() => handleAddNode()}>Add Node</button>
 			<button onclick={startEdgeDrawing}>Add Edge</button>
 		{:else if contextMenu.type === 'node'}
+			{@const node = cy?.getElementById(contextMenu?.targetId || '')}
+			{@const isCollapsed = node?.hasClass('cy-expand-collapse-collapsed-node')}
 			<button onclick={() => handleAddNode(contextMenu?.targetId)}>Add Child Node</button>
 			<button onclick={() => { editingLabel = { id: contextMenu!.targetId!, type: 'node', value: cy?.getElementById(contextMenu!.targetId!).data('label') || '' }; closeContextMenu(); }}>Edit Label</button>
-			{#if cy?.getElementById(contextMenu?.targetId || '').isParent()}
-				{@const node = cy?.getElementById(contextMenu?.targetId || '')}
-				{@const isCollapsed = node?.hasClass('cy-expand-collapse-collapsed-node')}
-				{#if isCollapsed}
-					<button onclick={() => { expandNode(contextMenu!.targetId!); closeContextMenu(); }}>Expand</button>
-				{:else}
-					<button onclick={() => { collapseNode(contextMenu!.targetId!); closeContextMenu(); }}>Collapse</button>
-				{/if}
+			{#if isCollapsed}
+				<button onclick={() => { expandNode(contextMenu!.targetId!); closeContextMenu(); }}>Expand</button>
+			{:else if node?.isParent()}
+				<button onclick={() => { collapseNode(contextMenu!.targetId!); closeContextMenu(); }}>Collapse</button>
 			{/if}
 			{#if cy?.getElementById(contextMenu?.targetId || '').data('parent')}
 				<button onclick={() => handleMoveToParent(contextMenu!.targetId!)}>Move to Parent</button>
