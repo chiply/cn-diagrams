@@ -649,7 +649,7 @@
 		if (parents.length > 0) {
 			expandCollapseApi.collapseAll();
 			// Update cache
-			parents.forEach((node: any) => collapsedNodes.add(node.id()));
+			parents.forEach((node: any) => { collapsedNodes.add(node.id()); });
 			showStatus('Collapsed all containers');
 		}
 	}
