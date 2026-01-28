@@ -10,24 +10,61 @@
 	let cy: cytoscape.Core | null = null;
 	let containerEl: HTMLDivElement;
 
-	// Sample DSL to get started
+	// Sample DSL to get started (YAML format)
 	let code = $state(`# CN Diagram Example
-# Define a backend system with nested services
+name: Sample Architecture
+description: A simple backend system with clients
 
-node backend "Backend System" {
-  node api "API Gateway"
-  node auth "Auth Service"
-  node db "Database"
-}
+nodes:
+  - id: backend
+    label: Backend System
+    description: Core backend services
+    type: system
+    children:
+      - id: api
+        label: API Gateway
+        description: REST API endpoint
+        type: service
+        technology: Node.js
+      - id: auth
+        label: Auth Service
+        description: Authentication and authorization
+        type: service
+        technology: Node.js
+      - id: db
+        label: Database
+        description: Primary data store
+        type: database
+        technology: PostgreSQL
 
-node frontend "Frontend App"
-node mobile "Mobile App"
+  - id: frontend
+    label: Frontend App
+    description: Web application
+    type: application
+    technology: React
 
-# Define relationships
-edge frontend -> api "REST API"
-edge mobile -> api "REST API"
-edge api -> auth "validates"
-edge api -> db "queries"
+  - id: mobile
+    label: Mobile App
+    description: iOS and Android apps
+    type: application
+    technology: React Native
+
+edges:
+  - source: frontend
+    target: api
+    label: REST API
+    technology: HTTPS
+  - source: mobile
+    target: api
+    label: REST API
+    technology: HTTPS
+  - source: api
+    target: auth
+    label: validates
+  - source: api
+    target: db
+    label: queries
+    technology: SQL
 `);
 
 	// Cytoscape stylesheet

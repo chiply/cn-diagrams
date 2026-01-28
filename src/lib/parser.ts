@@ -1,103 +1,135 @@
-// CN DSL Parser
-// DSL Syntax:
-//   # Comment
-//   node <id> "<label>" { ... nested nodes ... }
-//   edge <source> -> <target> "<label>"
+// CN DSL Parser - YAML Format
+// Parses YAML-based diagram definitions for maximum intellisense support
+
+import yaml from 'js-yaml';
+
+// YAML Schema Types - using many fields for better intellisense/validation
+
+export interface YAMLNode {
+	id: string;
+	label: string;
+	description?: string;
+	type?: string;
+	technology?: string;
+	children?: YAMLNode[];
+}
+
+export interface YAMLEdge {
+	id?: string;
+	source: string;
+	target: string;
+	label?: string;
+	description?: string;
+	technology?: string;
+	style?: 'solid' | 'dashed' | 'dotted';
+}
+
+export interface YAMLDiagram {
+	name?: string;
+	description?: string;
+	nodes: YAMLNode[];
+	edges?: YAMLEdge[];
+}
+
+// Internal types for Cytoscape conversion
 
 export interface CNNode {
 	id: string;
 	label: string;
 	parent?: string;
+	description?: string;
+	type?: string;
+	technology?: string;
 }
 
 export interface CNEdge {
+	id: string;
 	source: string;
 	target: string;
 	label?: string;
+	description?: string;
+	technology?: string;
+	style?: string;
 }
 
 export interface CNDiagram {
+	name?: string;
+	description?: string;
 	nodes: CNNode[];
 	edges: CNEdge[];
 	errors: string[];
 }
 
-interface ParseContext {
-	parentId?: string;
-	nodes: CNNode[];
-	edges: CNEdge[];
-	errors: string[];
-}
+function flattenNodes(nodes: YAMLNode[], parentId?: string): CNNode[] {
+	const result: CNNode[] = [];
 
-export function parseCNDSL(input: string): CNDiagram {
-	const context: ParseContext = {
-		nodes: [],
-		edges: [],
-		errors: []
-	};
+	for (const node of nodes) {
+		result.push({
+			id: node.id,
+			label: node.label,
+			parent: parentId,
+			description: node.description,
+			type: node.type,
+			technology: node.technology
+		});
 
-	const lines = input.split('\n');
-	let i = 0;
-
-	function parseBlock(parentId?: string): void {
-		while (i < lines.length) {
-			const line = lines[i].trim();
-
-			// Skip empty lines and comments
-			if (!line || line.startsWith('#')) {
-				i++;
-				continue;
-			}
-
-			// End of block
-			if (line === '}') {
-				i++;
-				return;
-			}
-
-			// Parse node
-			const nodeMatch = line.match(/^node\s+(\w+)\s+"([^"]*)"(\s*\{)?$/);
-			if (nodeMatch) {
-				const [, id, label, hasChildren] = nodeMatch;
-				context.nodes.push({
-					id,
-					label,
-					parent: parentId
-				});
-				i++;
-
-				if (hasChildren) {
-					parseBlock(id);
-				}
-				continue;
-			}
-
-			// Parse edge
-			const edgeMatch = line.match(/^edge\s+(\w+)\s*->\s*(\w+)(?:\s+"([^"]*)")?$/);
-			if (edgeMatch) {
-				const [, source, target, label] = edgeMatch;
-				context.edges.push({
-					source,
-					target,
-					label
-				});
-				i++;
-				continue;
-			}
-
-			// Unknown line
-			context.errors.push(`Line ${i + 1}: Unable to parse "${line}"`);
-			i++;
+		if (node.children && node.children.length > 0) {
+			result.push(...flattenNodes(node.children, node.id));
 		}
 	}
 
-	parseBlock();
+	return result;
+}
 
-	return {
-		nodes: context.nodes,
-		edges: context.edges,
-		errors: context.errors
-	};
+export function parseCNDSL(input: string): CNDiagram {
+	const errors: string[] = [];
+
+	try {
+		const doc = yaml.load(input) as YAMLDiagram | null;
+
+		if (!doc) {
+			return { nodes: [], edges: [], errors: ['Empty document'] };
+		}
+
+		if (!doc.nodes || !Array.isArray(doc.nodes)) {
+			return { nodes: [], edges: [], errors: ['Missing or invalid "nodes" array'] };
+		}
+
+		// Flatten nested nodes
+		const nodes = flattenNodes(doc.nodes);
+
+		// Process edges
+		const edges: CNEdge[] = [];
+		if (doc.edges && Array.isArray(doc.edges)) {
+			for (let i = 0; i < doc.edges.length; i++) {
+				const edge = doc.edges[i];
+				if (!edge.source || !edge.target) {
+					errors.push(`Edge ${i + 1}: Missing source or target`);
+					continue;
+				}
+				edges.push({
+					id: edge.id || `${edge.source}-${edge.target}`,
+					source: edge.source,
+					target: edge.target,
+					label: edge.label,
+					description: edge.description,
+					technology: edge.technology,
+					style: edge.style
+				});
+			}
+		}
+
+		return {
+			name: doc.name,
+			description: doc.description,
+			nodes,
+			edges,
+			errors
+		};
+	} catch (e) {
+		const message = e instanceof Error ? e.message : 'Unknown parsing error';
+		return { nodes: [], edges: [], errors: [message] };
+	}
 }
 
 // Convert CN diagram to Cytoscape elements
@@ -111,7 +143,10 @@ export function toCytoscapeElements(diagram: CNDiagram): cytoscape.ElementDefini
 			data: {
 				id: node.id,
 				label: node.label,
-				parent: node.parent
+				parent: node.parent,
+				description: node.description,
+				type: node.type,
+				technology: node.technology
 			}
 		});
 	}
@@ -121,10 +156,13 @@ export function toCytoscapeElements(diagram: CNDiagram): cytoscape.ElementDefini
 		elements.push({
 			group: 'edges',
 			data: {
-				id: `${edge.source}-${edge.target}`,
+				id: edge.id,
 				source: edge.source,
 				target: edge.target,
-				label: edge.label || ''
+				label: edge.label || '',
+				description: edge.description,
+				technology: edge.technology,
+				style: edge.style
 			}
 		});
 	}
