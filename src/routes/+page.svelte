@@ -13,6 +13,7 @@
 		getAllNodeIds,
 		getNodeParentId
 	} from '$lib/yaml-editor';
+	import YamlEditor from '$lib/components/YamlEditor.svelte';
 	import cytoscape from 'cytoscape';
 	import fcose from 'cytoscape-fcose';
 
@@ -564,7 +565,8 @@ edges:
 
 	// Debounce updates from code editor
 	let timeout: ReturnType<typeof setTimeout>;
-	function handleInput() {
+	function handleCodeChange(newValue: string) {
+		code = newValue;
 		clearTimeout(timeout);
 		timeout = setTimeout(() => {
 			updateSource = 'code';
@@ -585,12 +587,9 @@ edges:
 			CN DSL Editor
 			<span class="header-hint">YAML format</span>
 		</div>
-		<textarea
-			bind:value={code}
-			oninput={handleInput}
-			spellcheck="false"
-			placeholder="Enter your CN diagram DSL here..."
-		></textarea>
+		<div class="editor-wrapper">
+			<YamlEditor value={code} onchange={handleCodeChange} />
+		</div>
 	</div>
 	<div class="diagram-pane">
 		<div class="header">
@@ -774,21 +773,9 @@ edges:
 		border-color: #38a169;
 	}
 
-	textarea {
+	.editor-wrapper {
 		flex: 1;
-		resize: none;
-		border: none;
-		padding: 16px;
-		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-		font-size: 13px;
-		line-height: 1.5;
-		background: #1a202c;
-		color: #e2e8f0;
-		outline: none;
-	}
-
-	textarea::placeholder {
-		color: #718096;
+		overflow: hidden;
 	}
 
 	.cytoscape-container {

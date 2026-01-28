@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cn-diagrams.dev/schema.json",
+  "title": "CN Diagram",
+  "description": "A CN (Cloud Native) diagram definition with arbitrary levels of nesting",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the diagram"
+    },
+    "description": {
+      "type": "string",
+      "description": "A description of what this diagram represents"
+    },
+    "nodes": {
+      "type": "array",
+      "description": "The nodes (components) in the diagram",
+      "items": {
+        "$ref": "#/definitions/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "description": "The connections between nodes",
+      "items": {
+        "$ref": "#/definitions/edge"
+      }
+    }
+  },
+  "required": ["nodes"],
+  "definitions": {
+    "node": {
+      "type": "object",
+      "description": "A node representing a component, system, or container",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the node (used in edge source/target)",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "label": {
+          "type": "string",
+          "description": "Display name shown on the diagram"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of what this node represents"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type/category of this node",
+          "enum": [
+            "service",
+            "database",
+            "cache",
+            "queue",
+            "storage",
+            "application",
+            "system",
+            "cluster",
+            "environment",
+            "container",
+            "external",
+            "user",
+            "browser",
+            "mobile"
+          ]
+        },
+        "technology": {
+          "type": "string",
+          "description": "The technology or framework used (e.g., Node.js, PostgreSQL, Redis)",
+          "examples": [
+            "Node.js",
+            "Python",
+            "Go",
+            "Java",
+            "PostgreSQL",
+            "MySQL",
+            "MongoDB",
+            "Redis",
+            "Kafka",
+            "RabbitMQ",
+            "React",
+            "Vue",
+            "Angular",
+            "Kubernetes",
+            "Docker",
+            "AWS",
+            "GCP",
+            "Azure"
+          ]
+        },
+        "children": {
+          "type": "array",
+          "description": "Nested child nodes (creates a container/group)",
+          "items": {
+            "$ref": "#/definitions/node"
+          }
+        }
+      },
+      "required": ["id", "label"],
+      "additionalProperties": false
+    },
+    "edge": {
+      "type": "object",
+      "description": "A connection/relationship between two nodes",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Optional unique identifier for the edge"
+        },
+        "source": {
+          "type": "string",
+          "description": "The id of the source node"
+        },
+        "target": {
+          "type": "string",
+          "description": "The id of the target node"
+        },
+        "label": {
+          "type": "string",
+          "description": "Text label describing the relationship (e.g., 'queries', 'authenticates')"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of this connection"
+        },
+        "technology": {
+          "type": "string",
+          "description": "The protocol or technology used (e.g., HTTPS, gRPC, TCP)",
+          "examples": [
+            "HTTPS",
+            "HTTP",
+            "gRPC",
+            "GraphQL",
+            "REST",
+            "WebSocket",
+            "TCP",
+            "UDP",
+            "AMQP",
+            "JDBC",
+            "ODBC"
+          ]
+        },
+        "style": {
+          "type": "string",
+          "description": "Visual style of the edge line",
+          "enum": ["solid", "dashed", "dotted"],
+          "default": "solid"
+        }
+      },
+      "required": ["source", "target"],
+      "additionalProperties": false
+    }
+  }
+}
