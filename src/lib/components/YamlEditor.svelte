@@ -10,7 +10,7 @@
 	let props: Props = $props();
 
 	let container: HTMLDivElement;
-	let editor: Monaco.editor.IStandaloneCodeEditor | null = null;
+	let editor = $state<Monaco.editor.IStandaloneCodeEditor | null>(null);
 	let isUpdatingFromProp = false;
 
 	onMount(async () => {
