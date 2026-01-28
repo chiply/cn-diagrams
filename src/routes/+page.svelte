@@ -207,7 +207,7 @@ edges:
 		const layout = cy.layout({
 			name: 'fcose',
 			quality: 'proof',
-			animate: updateSource === 'code',
+			animate: false,
 			animationDuration: 500,
 			animationEasing: 'ease-out',
 			fit: true,
