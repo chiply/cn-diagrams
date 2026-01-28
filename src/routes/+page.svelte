@@ -16,12 +16,15 @@
 	import YamlEditor from '$lib/components/YamlEditor.svelte';
 	import cytoscape from 'cytoscape';
 	import fcose from 'cytoscape-fcose';
+	import expandCollapse from 'cytoscape-expand-collapse';
 
-	// Register fCoSE layout
+	// Register extensions
 	cytoscape.use(fcose);
+	expandCollapse(cytoscape);
 
 	let cy: cytoscape.Core | null = null;
 	let containerEl: HTMLDivElement;
+	let expandCollapseApi: any = null;
 
 	// UI state
 	let contextMenu = $state<{ x: number; y: number; type: 'canvas' | 'node' | 'edge'; targetId?: string } | null>(null);
@@ -211,6 +214,22 @@ edges:
 			style: {
 				'border-width': 3,
 				'border-color': '#38a169'
+			}
+		},
+		// Collapsed node styles
+		{
+			selector: '.cy-expand-collapse-collapsed-node',
+			style: {
+				'background-color': '#667eea',
+				'border-color': '#5a67d8',
+				'border-width': 3,
+				'border-style': 'dashed',
+				'text-valign': 'center',
+				'text-halign': 'center',
+				'color': '#fff',
+				'text-outline-color': '#667eea',
+				'text-outline-width': 2,
+				'font-weight': 'bold'
 			}
 		}
 	];
@@ -513,6 +532,38 @@ edges:
 		}
 	}
 
+	// Expand/Collapse functions
+	function collapseAll() {
+		if (!expandCollapseApi || !cy) return;
+		const parents = cy.nodes(':parent');
+		if (parents.length > 0) {
+			expandCollapseApi.collapseAll();
+			showStatus('Collapsed all containers');
+		}
+	}
+
+	function expandAll() {
+		if (!expandCollapseApi || !cy) return;
+		expandCollapseApi.expandAll();
+		showStatus('Expanded all containers');
+	}
+
+	function collapseNode(nodeId: string) {
+		if (!expandCollapseApi || !cy) return;
+		const node = cy.getElementById(nodeId);
+		if (node && node.isParent()) {
+			expandCollapseApi.collapse(node);
+		}
+	}
+
+	function expandNode(nodeId: string) {
+		if (!expandCollapseApi || !cy) return;
+		const node = cy.getElementById(nodeId);
+		if (node) {
+			expandCollapseApi.expand(node);
+		}
+	}
+
 	onMount(() => {
 		cy = cytoscape({
 			container: containerEl,
@@ -521,8 +572,24 @@ edges:
 			boxSelectionEnabled: true
 		});
 
+		// Initialize expand-collapse extension
+		expandCollapseApi = (cy as any).expandCollapse({
+			layoutBy: null, // We'll handle layout ourselves
+			fisheye: false,
+			animate: false,
+			undoable: false,
+			cueEnabled: true,
+			expandCollapseCuePosition: 'top-left',
+			expandCollapseCueSize: 16,
+			expandCollapseCueLineSize: 8,
+			expandCueImage: undefined,
+			collapseCueImage: undefined,
+			expandCollapseCueSensitivity: 1
+		});
+
 		// Expose cy for debugging
 		(window as any).cy = cy;
+		(window as any).expandCollapseApi = expandCollapseApi;
 
 		// Event handlers
 		cy.on('dblclick', 'node, edge', handleDoubleClick);
@@ -603,6 +670,22 @@ edges:
 				>
 					{edgeDrawingMode ? 'Cancel' : 'Add Edge'}
 				</button>
+				<div class="toolbar-divider"></div>
+				<button
+					class="toolbar-btn"
+					onclick={expandAll}
+					title="Expand all containers"
+				>
+					Expand All
+				</button>
+				<button
+					class="toolbar-btn"
+					onclick={collapseAll}
+					title="Collapse all containers"
+				>
+					Collapse All
+				</button>
+				<div class="toolbar-divider"></div>
 				<button
 					class="toolbar-btn"
 					class:active={showHelp}
@@ -639,6 +722,11 @@ edges:
 						<div class="help-item">Node: Add child, edit, move, delete</div>
 						<div class="help-item">Edge: Edit label, delete</div>
 					</div>
+					<div class="help-section">
+						<div class="help-title">Expand/Collapse</div>
+						<div class="help-item"><kbd>Click cue</kbd> Toggle container</div>
+						<div class="help-item">Use toolbar or right-click menu</div>
+					</div>
 				</div>
 			</div>
 		{/if}
@@ -660,6 +748,15 @@ edges:
 		{:else if contextMenu.type === 'node'}
 			<button onclick={() => handleAddNode(contextMenu?.targetId)}>Add Child Node</button>
 			<button onclick={() => { editingLabel = { id: contextMenu!.targetId!, type: 'node', value: cy?.getElementById(contextMenu!.targetId!).data('label') || '' }; closeContextMenu(); }}>Edit Label</button>
+			{#if cy?.getElementById(contextMenu?.targetId || '').isParent()}
+				{@const node = cy?.getElementById(contextMenu?.targetId || '')}
+				{@const isCollapsed = node?.hasClass('cy-expand-collapse-collapsed-node')}
+				{#if isCollapsed}
+					<button onclick={() => { expandNode(contextMenu!.targetId!); closeContextMenu(); }}>Expand</button>
+				{:else}
+					<button onclick={() => { collapseNode(contextMenu!.targetId!); closeContextMenu(); }}>Collapse</button>
+				{/if}
+			{/if}
 			{#if cy?.getElementById(contextMenu?.targetId || '').data('parent')}
 				<button onclick={() => handleMoveToParent(contextMenu!.targetId!)}>Move to Parent</button>
 				{#if getNodeParentId(code, cy?.getElementById(contextMenu?.targetId || '').data('parent'))}
@@ -771,6 +868,13 @@ edges:
 	.toolbar-btn.active {
 		background: #38a169;
 		border-color: #38a169;
+	}
+
+	.toolbar-divider {
+		width: 1px;
+		height: 20px;
+		background: rgba(255, 255, 255, 0.3);
+		margin: 0 4px;
 	}
 
 	.editor-wrapper {

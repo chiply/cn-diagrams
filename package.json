@@ -24,6 +24,7 @@
 	},
 	"dependencies": {
 		"cytoscape": "^3.33.1",
+		"cytoscape-expand-collapse": "^4.1.1",
 		"cytoscape-fcose": "^2.2.0",
 		"monaco-editor": "^0.55.1",
 		"monaco-yaml": "^5.4.0",
