@@ -25,6 +25,6 @@
 	"dependencies": {
 		"cytoscape": "^3.33.1",
 		"cytoscape-fcose": "^2.2.0",
-		"js-yaml": "^4.1.1"
+		"yaml": "^2.8.2"
 	}
 }

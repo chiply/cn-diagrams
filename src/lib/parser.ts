@@ -1,7 +1,7 @@
 // CN DSL Parser - YAML Format
 // Parses YAML-based diagram definitions for maximum intellisense support
 
-import yaml from 'js-yaml';
+import { parse } from 'yaml';
 
 // YAML Schema Types - using many fields for better intellisense/validation
 
@@ -85,7 +85,7 @@ export function parseCNDSL(input: string): CNDiagram {
 	const errors: string[] = [];
 
 	try {
-		const doc = yaml.load(input) as YAMLDiagram | null;
+		const doc = parse(input) as YAMLDiagram | null;
 
 		if (!doc) {
 			return { nodes: [], edges: [], errors: ['Empty document'] };
