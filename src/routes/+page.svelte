@@ -88,6 +88,30 @@ edges:
     technology: SQL
 `);
 
+	// Simple hash function for deterministic positioning
+	function hashCode(str: string): number {
+		let hash = 0;
+		for (let i = 0; i < str.length; i++) {
+			const char = str.charCodeAt(i);
+			hash = ((hash << 5) - hash) + char;
+			hash = hash & hash; // Convert to 32bit integer
+		}
+		return hash;
+	}
+
+	// Generate deterministic initial position based on node ID
+	function getInitialPosition(nodeId: string, index: number): { x: number; y: number } {
+		const hash = hashCode(nodeId);
+		// Use hash to generate position in a grid-like pattern with some variation
+		const gridSize = 200;
+		const col = (Math.abs(hash) % 10);
+		const row = (Math.abs(hash >> 8) % 10);
+		return {
+			x: col * gridSize + (hash % 50),
+			y: row * gridSize + ((hash >> 4) % 50)
+		};
+	}
+
 	// Cytoscape stylesheet
 	const style: cytoscape.StylesheetStyle[] = [
 		{
@@ -173,15 +197,22 @@ edges:
 		cy.elements().remove();
 		cy.add(elements);
 
-		// Run layout
+		// Set deterministic initial positions based on node ID hashes
+		cy.nodes().forEach((node, index) => {
+			const pos = getInitialPosition(node.id(), index);
+			node.position(pos);
+		});
+
+		// Run layout with deterministic settings
 		const layout = cy.layout({
 			name: 'fcose',
+			quality: 'proof',
 			animate: updateSource === 'code',
 			animationDuration: 500,
 			animationEasing: 'ease-out',
 			fit: true,
 			padding: 50,
-			randomize: true,
+			randomize: false,
 			nodeDimensionsIncludeLabels: true,
 			packComponents: true,
 			nodeRepulsion: () => 4500,
