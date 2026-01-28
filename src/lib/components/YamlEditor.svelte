@@ -7,7 +7,7 @@
 		onchange?: (value: string) => void;
 	}
 
-	let { value, onchange }: Props = $props();
+	let props: Props = $props();
 
 	let container: HTMLDivElement;
 	let editor: Monaco.editor.IStandaloneCodeEditor | null = null;
@@ -69,7 +69,7 @@
 
 		// Create the editor
 		editor = monaco.editor.create(container, {
-			value,
+			value: props.value,
 			language: 'yaml',
 			theme: 'cn-dark',
 			minimap: { enabled: false },
@@ -97,7 +97,7 @@
 		editor.onDidChangeModelContent(() => {
 			if (isUpdatingFromProp) return;
 			const newValue = editor?.getValue() ?? '';
-			onchange?.(newValue);
+			props.onchange?.(newValue);
 		});
 	});
 
@@ -107,10 +107,10 @@
 
 	// Update editor when value prop changes externally
 	$effect(() => {
-		if (editor && value !== editor.getValue()) {
+		if (editor && props.value !== editor.getValue()) {
 			isUpdatingFromProp = true;
 			const position = editor.getPosition();
-			editor.setValue(value);
+			editor.setValue(props.value);
 			if (position) {
 				editor.setPosition(position);
 			}
