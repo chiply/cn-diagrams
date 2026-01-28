@@ -14,6 +14,7 @@
 		getNodeParentId
 	} from '$lib/yaml-editor';
 	import YamlEditor from '$lib/components/YamlEditor.svelte';
+	import { examples, type Example } from '$lib/examples';
 	import cytoscape from 'cytoscape';
 	import fcose from 'cytoscape-fcose';
 	import expandCollapse from 'cytoscape-expand-collapse';
@@ -33,6 +34,7 @@
 	let edgeSourceNode = $state<string | null>(null);
 	let statusMessage = $state<string>('');
 	let showHelp = $state(false);
+	let selectedExampleId = $state<string>('complex-cloud');
 
 	// Track if update came from code or diagram
 	let updateSource: 'code' | 'diagram' = 'code';
@@ -140,85 +142,22 @@
 		return toExpand;
 	}
 
-	// Sample DSL to get started (YAML format)
-	let code = $state(`# CN Diagram Example - Multi-level Nesting
-name: Cloud Platform Architecture
-description: A cloud platform with multiple levels of encapsulation
+	// Load initial example
+	const initialExample = examples.find(e => e.id === 'complex-cloud');
+	let code = $state(initialExample?.yaml || '');
 
-nodes:
-  - id: cloud
-    label: Cloud Platform
-    type: environment
-    description: AWS Cloud Infrastructure
-    children:
-      - id: k8s
-        label: Kubernetes Cluster
-        type: cluster
-        description: EKS managed cluster
-        children:
-          - id: backend
-            label: Backend System
-            type: system
-            children:
-              - id: api
-                label: API Gateway
-                type: service
-                technology: Node.js
-                description: Handles all incoming API requests
-              - id: auth
-                label: Auth Service
-                type: service
-                technology: Node.js
-                description: JWT authentication and authorization
-          - id: data
-            label: Data Layer
-            type: system
-            children:
-              - id: db
-                label: Database
-                type: database
-                technology: PostgreSQL
-                description: Primary data store
-              - id: cache
-                label: Redis Cache
-                type: cache
-                technology: Redis
-                description: Session and query caching
-
-  - id: frontend
-    label: Frontend App
-    type: application
-    technology: React
-    description: Single-page web application
-
-  - id: mobile
-    label: Mobile App
-    type: application
-    technology: React Native
-    description: Cross-platform mobile app
-
-edges:
-  - source: frontend
-    target: api
-    label: REST API
-    technology: HTTPS
-  - source: mobile
-    target: api
-    label: REST API
-    technology: HTTPS
-  - source: api
-    target: auth
-    label: validates
-    technology: gRPC
-  - source: api
-    target: db
-    label: queries
-    technology: TCP
-  - source: api
-    target: cache
-    label: caches
-    technology: TCP
-`);
+	// Handle example selection
+	function loadExample(exampleId: string) {
+		const example = examples.find(e => e.id === exampleId);
+		if (example) {
+			selectedExampleId = exampleId;
+			code = example.yaml;
+			// Clear collapsed state when loading new example
+			collapsedNodes.clear();
+			previousDiagram = null;
+			updateDiagram();
+		}
+	}
 
 	// Simple hash function for deterministic positioning
 	function hashCode(str: string): number {
@@ -818,8 +757,31 @@ edges:
 <div class="container">
 	<div class="editor-pane">
 		<div class="header">
-			CN DSL Editor
-			<span class="header-hint">YAML format</span>
+			<span>CN DSL Editor</span>
+			<div class="example-selector">
+				<label for="example-select">Example:</label>
+				<select
+					id="example-select"
+					value={selectedExampleId}
+					onchange={(e) => loadExample((e.target as HTMLSelectElement).value)}
+				>
+					<optgroup label="Simple">
+						{#each examples.filter(e => e.complexity === 'simple') as example}
+							<option value={example.id}>{example.name}</option>
+						{/each}
+					</optgroup>
+					<optgroup label="Medium">
+						{#each examples.filter(e => e.complexity === 'medium') as example}
+							<option value={example.id}>{example.name}</option>
+						{/each}
+					</optgroup>
+					<optgroup label="Complex">
+						{#each examples.filter(e => e.complexity === 'complex') as example}
+							<option value={example.id}>{example.name}</option>
+						{/each}
+					</optgroup>
+				</select>
+			</div>
 		</div>
 		<div class="editor-wrapper">
 			<YamlEditor value={code} onchange={handleCodeChange} />
@@ -1004,10 +966,36 @@ edges:
 		justify-content: space-between;
 	}
 
-	.header-hint {
+	.example-selector {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.example-selector label {
 		font-size: 11px;
-		opacity: 0.7;
 		font-weight: normal;
+		opacity: 0.8;
+	}
+
+	.example-selector select {
+		padding: 4px 8px;
+		border-radius: 4px;
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		background: rgba(255, 255, 255, 0.1);
+		color: white;
+		font-size: 12px;
+		cursor: pointer;
+	}
+
+	.example-selector select:hover {
+		background: rgba(255, 255, 255, 0.2);
+	}
+
+	.example-selector select option,
+	.example-selector select optgroup {
+		background: #2c5282;
+		color: white;
 	}
 
 	.toolbar {
