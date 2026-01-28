@@ -37,6 +37,109 @@
 	// Track if update came from code or diagram
 	let updateSource: 'code' | 'diagram' = 'code';
 
+	// Cache for collapsed state persistence
+	let collapsedNodes = new Set<string>();
+	let previousDiagram: ReturnType<typeof parseCNDSL> | null = null;
+
+	// Helper: Get all ancestor node IDs for a given node
+	function getAncestors(nodeId: string, nodes: { id: string; parent?: string }[]): string[] {
+		const ancestors: string[] = [];
+		const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+		let current = nodeMap.get(nodeId);
+		while (current?.parent) {
+			ancestors.push(current.parent);
+			current = nodeMap.get(current.parent);
+		}
+		return ancestors;
+	}
+
+	// Helper: Find containers that need to be expanded due to edits
+	function findContainersToExpand(
+		oldDiagram: ReturnType<typeof parseCNDSL> | null,
+		newDiagram: ReturnType<typeof parseCNDSL>
+	): Set<string> {
+		const toExpand = new Set<string>();
+
+		if (!oldDiagram) return toExpand;
+
+		const oldNodeIds = new Set(oldDiagram.nodes.map(n => n.id));
+		const oldNodeMap = new Map(oldDiagram.nodes.map(n => [n.id, n]));
+		const oldEdgeIds = new Set(oldDiagram.edges.map(e => e.id));
+		const oldEdgeMap = new Map(oldDiagram.edges.map(e => [e.id, e]));
+
+		// Check for new or modified nodes
+		for (const node of newDiagram.nodes) {
+			const oldNode = oldNodeMap.get(node.id);
+			const isNew = !oldNodeIds.has(node.id);
+			const isModified = oldNode && (
+				oldNode.label !== node.label ||
+				oldNode.description !== node.description ||
+				oldNode.type !== node.type ||
+				oldNode.technology !== node.technology ||
+				oldNode.parent !== node.parent
+			);
+
+			if (isNew || isModified) {
+				// Get ancestors and add collapsed ones to expand list
+				const ancestors = getAncestors(node.id, newDiagram.nodes);
+				for (const ancestorId of ancestors) {
+					if (collapsedNodes.has(ancestorId)) {
+						toExpand.add(ancestorId);
+					}
+				}
+			}
+		}
+
+		// Check for deleted nodes - expand their former parent
+		for (const oldNode of oldDiagram.nodes) {
+			if (!newDiagram.nodes.some(n => n.id === oldNode.id)) {
+				if (oldNode.parent && collapsedNodes.has(oldNode.parent)) {
+					toExpand.add(oldNode.parent);
+				}
+			}
+		}
+
+		// Check for new or modified edges
+		for (const edge of newDiagram.edges) {
+			const oldEdge = oldEdgeMap.get(edge.id);
+			const isNew = !oldEdgeIds.has(edge.id);
+			const isModified = oldEdge && (
+				oldEdge.label !== edge.label ||
+				oldEdge.source !== edge.source ||
+				oldEdge.target !== edge.target
+			);
+
+			if (isNew || isModified) {
+				// Expand ancestors of both source and target
+				const sourceAncestors = getAncestors(edge.source, newDiagram.nodes);
+				const targetAncestors = getAncestors(edge.target, newDiagram.nodes);
+
+				for (const ancestorId of [...sourceAncestors, ...targetAncestors]) {
+					if (collapsedNodes.has(ancestorId)) {
+						toExpand.add(ancestorId);
+					}
+				}
+			}
+		}
+
+		// Check for deleted edges - expand containers of their endpoints
+		for (const oldEdge of oldDiagram.edges) {
+			if (!newDiagram.edges.some(e => e.id === oldEdge.id)) {
+				const sourceAncestors = getAncestors(oldEdge.source, oldDiagram.nodes);
+				const targetAncestors = getAncestors(oldEdge.target, oldDiagram.nodes);
+
+				for (const ancestorId of [...sourceAncestors, ...targetAncestors]) {
+					if (collapsedNodes.has(ancestorId)) {
+						toExpand.add(ancestorId);
+					}
+				}
+			}
+		}
+
+		return toExpand;
+	}
+
 	// Sample DSL to get started (YAML format)
 	let code = $state(`# CN Diagram Example - Multi-level Nesting
 name: Cloud Platform Architecture
@@ -237,8 +340,32 @@ edges:
 	function updateDiagram() {
 		if (!cy) return;
 
+		// Save current collapsed state before clearing
+		if (expandCollapseApi) {
+			const collapsedEles = cy.nodes('.cy-expand-collapse-collapsed-node');
+			collapsedEles.forEach((node: any) => {
+				collapsedNodes.add(node.id());
+			});
+		}
+
 		const diagram = parseCNDSL(code);
 		const elements = toCytoscapeElements(diagram);
+
+		// Find which containers need to be expanded due to edits within them
+		const containersToExpand = findContainersToExpand(previousDiagram, diagram);
+
+		// Remove expanded containers from collapsed set
+		for (const containerId of containersToExpand) {
+			collapsedNodes.delete(containerId);
+		}
+
+		// Clean up stale node IDs (nodes that no longer exist)
+		const currentNodeIds = new Set(diagram.nodes.map(n => n.id));
+		for (const nodeId of collapsedNodes) {
+			if (!currentNodeIds.has(nodeId)) {
+				collapsedNodes.delete(nodeId);
+			}
+		}
 
 		// Update elements
 		cy.elements().remove();
@@ -276,9 +403,31 @@ edges:
 			tilingPaddingHorizontal: 10,
 			stop: () => {
 				cy?.fit(undefined, 50);
+
+				// Restore collapsed state after layout completes
+				if (expandCollapseApi && collapsedNodes.size > 0) {
+					// Collapse nodes that should remain collapsed (in reverse order for nested containers)
+					const nodesToCollapse = cy?.nodes().filter((node: any) =>
+						collapsedNodes.has(node.id()) && node.isParent()
+					);
+					if (nodesToCollapse && nodesToCollapse.length > 0) {
+						// Sort by depth (deepest first) to collapse inner containers first
+						const sorted = nodesToCollapse.sort((a: any, b: any) => {
+							const depthA = getAncestors(a.id(), diagram.nodes).length;
+							const depthB = getAncestors(b.id(), diagram.nodes).length;
+							return depthB - depthA;
+						});
+						sorted.forEach((node: any) => {
+							expandCollapseApi.collapse(node);
+						});
+					}
+				}
 			}
 		} as fcose.FcoseLayoutOptions);
 		layout.run();
+
+		// Store current diagram for next comparison
+		previousDiagram = diagram;
 
 		// Reset update source
 		updateSource = 'code';
@@ -538,6 +687,8 @@ edges:
 		const parents = cy.nodes(':parent');
 		if (parents.length > 0) {
 			expandCollapseApi.collapseAll();
+			// Update cache
+			parents.forEach((node: any) => collapsedNodes.add(node.id()));
 			showStatus('Collapsed all containers');
 		}
 	}
@@ -545,6 +696,8 @@ edges:
 	function expandAll() {
 		if (!expandCollapseApi || !cy) return;
 		expandCollapseApi.expandAll();
+		// Clear cache
+		collapsedNodes.clear();
 		showStatus('Expanded all containers');
 	}
 
@@ -553,6 +706,7 @@ edges:
 		const node = cy.getElementById(nodeId);
 		if (node && node.isParent()) {
 			expandCollapseApi.collapse(node);
+			collapsedNodes.add(nodeId);
 		}
 	}
 
@@ -561,6 +715,7 @@ edges:
 		const node = cy.getElementById(nodeId);
 		if (node) {
 			expandCollapseApi.expand(node);
+			collapsedNodes.delete(nodeId);
 		}
 	}
 
