@@ -132,6 +132,24 @@ export function parseCNDSL(input: string): CNDiagram {
 	}
 }
 
+// Truncate text to a maximum length with ellipsis
+function truncate(text: string, maxLength: number): string {
+	if (text.length <= maxLength) return text;
+	return text.slice(0, maxLength - 1).trim() + '…';
+}
+
+// Build a display label that includes technology and truncated description
+function buildDisplayLabel(node: CNNode): string {
+	let label = node.label;
+	if (node.technology) {
+		label += `\n[${node.technology}]`;
+	}
+	if (node.description) {
+		label += `\n${truncate(node.description, 30)}`;
+	}
+	return label;
+}
+
 // Convert CN diagram to Cytoscape elements
 export function toCytoscapeElements(diagram: CNDiagram): cytoscape.ElementDefinition[] {
 	const elements: cytoscape.ElementDefinition[] = [];
@@ -143,6 +161,7 @@ export function toCytoscapeElements(diagram: CNDiagram): cytoscape.ElementDefini
 			data: {
 				id: node.id,
 				label: node.label,
+				displayLabel: buildDisplayLabel(node),
 				parent: node.parent,
 				description: node.description,
 				type: node.type,
@@ -153,6 +172,12 @@ export function toCytoscapeElements(diagram: CNDiagram): cytoscape.ElementDefini
 
 	// Add edges
 	for (const edge of diagram.edges) {
+		// Build edge display label including technology
+		let edgeDisplayLabel = edge.label || '';
+		if (edge.technology) {
+			edgeDisplayLabel += edgeDisplayLabel ? ` [${edge.technology}]` : `[${edge.technology}]`;
+		}
+
 		elements.push({
 			group: 'edges',
 			data: {
@@ -160,6 +185,7 @@ export function toCytoscapeElements(diagram: CNDiagram): cytoscape.ElementDefini
 				source: edge.source,
 				target: edge.target,
 				label: edge.label || '',
+				displayLabel: edgeDisplayLabel,
 				description: edge.description,
 				technology: edge.technology,
 				style: edge.style

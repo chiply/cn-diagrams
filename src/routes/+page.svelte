@@ -41,10 +41,12 @@ nodes:
   - id: cloud
     label: Cloud Platform
     type: environment
+    description: AWS Cloud Infrastructure
     children:
       - id: k8s
         label: Kubernetes Cluster
         type: cluster
+        description: EKS managed cluster
         children:
           - id: backend
             label: Backend System
@@ -54,10 +56,12 @@ nodes:
                 label: API Gateway
                 type: service
                 technology: Node.js
+                description: Handles all incoming API requests
               - id: auth
                 label: Auth Service
                 type: service
                 technology: Node.js
+                description: JWT authentication and authorization
           - id: data
             label: Data Layer
             type: system
@@ -66,37 +70,46 @@ nodes:
                 label: Database
                 type: database
                 technology: PostgreSQL
+                description: Primary data store
               - id: cache
                 label: Redis Cache
                 type: cache
                 technology: Redis
+                description: Session and query caching
 
   - id: frontend
     label: Frontend App
     type: application
     technology: React
+    description: Single-page web application
 
   - id: mobile
     label: Mobile App
     type: application
     technology: React Native
+    description: Cross-platform mobile app
 
 edges:
   - source: frontend
     target: api
     label: REST API
+    technology: HTTPS
   - source: mobile
     target: api
     label: REST API
+    technology: HTTPS
   - source: api
     target: auth
     label: validates
+    technology: gRPC
   - source: api
     target: db
     label: queries
+    technology: TCP
   - source: api
     target: cache
     label: caches
+    technology: TCP
 `);
 
 	// Simple hash function for deterministic positioning
@@ -129,19 +142,20 @@ edges:
 			selector: 'node',
 			style: {
 				'background-color': '#4a90d9',
-				'label': 'data(label)',
+				'label': 'data(displayLabel)',
 				'text-valign': 'center',
 				'text-halign': 'center',
 				'color': '#fff',
 				'text-outline-color': '#4a90d9',
 				'text-outline-width': 2,
-				'font-size': '14px',
-				'min-width': '120px',
-				'min-height': '40px',
-				'padding': '15px',
+				'font-size': '11px',
+				'min-width': '150px',
+				'min-height': '60px',
+				'padding': '25px',
 				'shape': 'roundrectangle',
 				'text-wrap': 'wrap',
-				'text-max-width': '100px'
+				'text-max-width': '140px',
+				'line-height': 1.3
 			}
 		},
 		{
@@ -174,11 +188,12 @@ edges:
 				'target-arrow-color': '#718096',
 				'target-arrow-shape': 'triangle',
 				'curve-style': 'bezier',
-				'label': 'data(label)',
+				'label': 'data(displayLabel)',
 				'font-size': '10px',
 				'text-rotation': 'autorotate',
 				'text-margin-y': -10,
-				'color': '#4a5568'
+				'color': '#4a5568',
+				'text-wrap': 'wrap'
 			}
 		},
 		{
@@ -512,6 +527,25 @@ edges:
 		cy.on('cxttap', handleContextMenu);
 		cy.on('tap', 'node', handleNodeClick);
 		cy.on('free', 'node', handleNodeDrop);
+
+		// Show description on hover
+		cy.on('mouseover', 'node, edge', (evt) => {
+			const desc = evt.target.data('description');
+			const tech = evt.target.data('technology');
+			const type = evt.target.data('type');
+			if (desc || type) {
+				const parts = [];
+				if (type) parts.push(`Type: ${type}`);
+				if (desc) parts.push(desc);
+				showStatus(parts.join(' | '));
+			}
+		});
+
+		cy.on('mouseout', 'node, edge', () => {
+			if (!edgeDrawingMode) {
+				statusMessage = '';
+			}
+		});
 
 		// Close context menu on canvas click
 		cy.on('tap', (evt) => {
