@@ -155,7 +155,7 @@ While CN Diagrams is useful for many scenarios, it may not be the right choice i
 - **Performance**: Browser-based rendering may struggle with hundreds of nodes
 - **Memory constraints**: Complex diagrams with deep nesting might impact browser performance
 
-### **Early Stage Project**
+### **You Need a Mature, Stable Project**
 - **Version 0.0.1**: This is an early-stage project that may have bugs and breaking changes
 - **Limited community**: Small user base means fewer resources, examples, and community support
 - **No SLA or support**: No guaranteed support or maintenance timeline
