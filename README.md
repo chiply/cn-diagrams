@@ -131,31 +131,31 @@ npm run preview
 
 While CN Diagrams is useful for many scenarios, it may not be the right choice if:
 
-### **You Need Advanced Diagram Features**
+### You Need Advanced Diagram Features
 - **Custom shapes and icons**: Currently limited to basic node shapes. If you need detailed UML diagrams, flowcharts with specific shapes, or custom icons, consider tools like Draw.io, Lucidchart, or PlantUML
 - **Advanced styling**: Limited customization of colors, fonts, and visual styles compared to dedicated diagramming tools
 - **Sequence diagrams or timing diagrams**: This tool focuses on architecture/component diagrams, not behavioral diagrams
 
-### **You Need Specific Layout Control**
+### You Need Specific Layout Control
 - **Precise positioning**: Uses automatic force-directed layout. If you need exact manual control over node positions, traditional diagramming tools may be better
 - **Standardized layouts**: If you need strict adherence to specific layout standards (e.g., layered hierarchical, grid-based), the automatic layout may not suit your needs
 
-### **You Work With Non-Technical Teams**
+### You Work With Non-Technical Teams
 - **No standalone editor**: Requires running a development server (not a simple desktop app)
 - **YAML knowledge**: Team members need to be comfortable with YAML syntax and concepts
 - **Technical setup**: Requires Node.js installation and familiarity with npm/web development
 
-### **You Need Enterprise Features**
+### You Need Enterprise Features
 - **Collaboration**: Currently single-user focused, no real-time multi-user editing
 - **Access control**: No built-in authentication or permissions
 - **Audit trails**: No change tracking beyond git commits
 - **Export options**: Limited export formats (no PDF, PNG, or SVG export yet)
 
-### **You Have Large-Scale Diagrams**
+### You Have Large-Scale Diagrams
 - **Performance**: Browser-based rendering may struggle with hundreds of nodes
 - **Memory constraints**: Complex diagrams with deep nesting might impact browser performance
 
-### **You Need a Mature, Stable Project**
+### You Need a Mature, Stable Project
 - **Version 0.0.1**: This is an early-stage project that may have bugs and breaking changes
 - **Limited community**: Small user base means fewer resources, examples, and community support
 - **No SLA or support**: No guaranteed support or maintenance timeline
