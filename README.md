@@ -160,7 +160,7 @@ While CN Diagrams is useful for many scenarios, it may not be the right choice i
 - **Limited community**: Small user base means fewer resources, examples, and community support
 - **No SLA or support**: No guaranteed support or maintenance timeline
 
-## When CN Diagrams IS Right For You
+## When CN Diagrams is Right For You
 
 Consider CN Diagrams if you:
 - Want diagrams versioned in git alongside your code
