@@ -168,4 +168,4 @@ Consider CN Diagrams if you:
 - Prefer code-first with optional visual editing
 - Work in a technical team comfortable with YAML and web tools
 - Value automatic layout over manual positioning
-- Want bidirectional code ↔ visual editing
+- Want bidirectional code <-> visual editing
